@@ -30,7 +30,7 @@ jobs:
       run: choco install 7zip -y
 
     - name: Create 7zip archive of the artifact
-      run: 7z a -t7z -mx=9 mangajanaiconvertergui-backend-${{ github.event.inputs.release_version }}.7z ./publish/mangajanaiconvertergui-backend-v${{ github.event.inputs.release_version }}
+      run: 7z a -t7z -mx=9 mangajanaiconvertergui-backend-${{ github.event.inputs.release_version }}.7z ./publish/backend
 
     - name: Create GitHub Release
       uses: ncipollo/release-action@v1
