@@ -36,7 +36,7 @@ void ExtractTgz(string gzArchiveName, string destFolder)
 async Task InstallPython()
 {
     // Download Python Installer
-    var downloadUrl = "https://github.com/indygreg/python-build-standalone/releases/download/20241016/cpython-3.12.7+20241016-x86_64-pc-windows-msvc-shared-install_only.tar.gz";
+    var downloadUrl = "https://github.com/astral-sh/python-build-standalone/releases/download/20250205/cpython-3.12.9+20250205-x86_64-pc-windows-msvc-shared-install_only.tar.gz";
     var targetPath = Path.GetFullPath("python.tar.gz");
     await DownloadFileAsync(downloadUrl, targetPath, (progress) =>
     {
@@ -68,7 +68,7 @@ async Task InstallPythonDependencies()
 
     await DownloadFileAsync(tomlUrl, targetPath, (progress) => { });
 
-    var cmd = $@"{pythonPath} -m pip install -U pip wheel --no-warn-script-location && {pythonPath} -m pip install torch==2.5.1 torchvision --index-url https://download.pytorch.org/whl/cu124 --no-warn-script-location && {pythonPath} -m pip install ""{Path.GetFullPath(@".")}"" --no-warn-script-location";
+    var cmd = $@"{pythonPath} -m pip install -U pip wheel --no-warn-script-location && {pythonPath} -m pip install torch==2.7.0 torchvision --index-url https://download.pytorch.org/whl/cu128 --no-warn-script-location && {pythonPath} -m pip install ""{Path.GetFullPath(@".")}"" --no-warn-script-location";
 
     await RunInstallCommand(cmd);
 
