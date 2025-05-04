@@ -22,6 +22,8 @@ jobs:
 
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        rustflags: ''
 
     - name: Publish .NET Core app
       run: dotnet publish BuildMangaJaNaiConverterGui-backend/BuildMangaJaNaiConverterGui-backend.csproj -c Release -o publish
