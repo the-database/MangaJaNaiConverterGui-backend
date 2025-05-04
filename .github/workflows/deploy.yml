@@ -20,6 +20,9 @@ jobs:
       with:
         dotnet-version: '8.x'  # Adjust the .NET version as needed
 
+    - name: Setup Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+
     - name: Publish .NET Core app
       run: dotnet publish BuildMangaJaNaiConverterGui-backend/BuildMangaJaNaiConverterGui-backend.csproj -c Release -o publish
 
