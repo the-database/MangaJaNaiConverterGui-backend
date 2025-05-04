@@ -6,6 +6,7 @@ using ICSharpCode.SharpZipLib.Zip;
 using System.Diagnostics;
 using System.Text;
 using static Downloader;
+using ZstdSharp;
 // TODO install numpy, onnx
 
 if (args.Length < 1)
@@ -33,10 +34,21 @@ void ExtractTgz(string gzArchiveName, string destFolder)
     inStream.Close();
 }
 
+void ExtractZstd(string archiveName, string destFolder)
+{
+    var src = File.ReadAllBytes(archiveName);
+    using var decompressor = new Decompressor();
+    var decompressed = decompressor.Unwrap(src);
+
+    TarArchive tarArchive = TarArchive.CreateInputTarArchive(new MemoryStream(decompressed.ToArray()), Encoding.UTF8);
+    tarArchive.ExtractContents(destFolder);
+    tarArchive.Close();
+}
+
 async Task InstallPython()
 {
     // Download Python Installer
-    var downloadUrl = "https://github.com/astral-sh/python-build-standalone/releases/download/20250205/cpython-3.12.9+20250205-x86_64-pc-windows-msvc-shared-install_only.tar.gz";
+    var downloadUrl = "https://github.com/astral-sh/python-build-standalone/releases/download/20250409/cpython-3.13.3+20250409-x86_64-pc-windows-msvc-pgo-full.tar.zst";
     var targetPath = Path.GetFullPath("python.tar.gz");
     await DownloadFileAsync(downloadUrl, targetPath, (progress) =>
     {
@@ -45,15 +57,43 @@ async Task InstallPython()
 
     // Install Python 
     Console.WriteLine("Extracting Python...");
-    ExtractTgz(targetPath, backendDirectory);
+    ExtractZstd(targetPath, backendDirectory);
+
+    // Clean up folder structure
+    var pythonDir = Path.Combine(backendDirectory, "python");
+    var installDir = Path.Combine(pythonDir, "install");
+
+    // 1) Delete build & licenses
+    foreach (var name in new[] { "build", "licenses" })
+    {
+        var dir = Path.Combine(pythonDir, name);
+        if (Directory.Exists(dir))
+            Directory.Delete(dir, recursive: true);
+    }
+
+    // 2) Move every file/dir out of install > python
+    if (Directory.Exists(installDir))
+    {
+        foreach (var entry in Directory.EnumerateFileSystemEntries(installDir))
+        {
+            var dest = Path.Combine(pythonDir, Path.GetFileName(entry)!);
+            if (Directory.Exists(entry))
+                Directory.Move(entry, dest);
+            else
+                File.Move(entry, dest);
+        }
+
+        // 3) Delete install itself
+        Directory.Delete(installDir, recursive: true);
+    }
 
     File.Delete(targetPath);
 }
 
 void AddPythonPth()
 {
-    string[] lines = { "python312.zip", "DLLs", "Lib", ".", "Lib/site-packages" };
-    var filename = "python312._pth";
+    string[] lines = { "python313.zip", "DLLs", "Lib", ".", "Lib/site-packages" };
+    var filename = "python313._pth";
 
     using var outputFile = new StreamWriter(Path.Combine(pythonDirectory, filename));
 
