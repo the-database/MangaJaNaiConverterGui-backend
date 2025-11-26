@@ -48,7 +48,7 @@ void ExtractZstd(string archiveName, string destFolder)
 async Task InstallPython()
 {
     // Download Python Installer
-    var downloadUrl = "https://github.com/astral-sh/python-build-standalone/releases/download/20250409/cpython-3.13.3+20250409-x86_64-pc-windows-msvc-pgo-full.tar.zst";
+    var downloadUrl = "https://github.com/astral-sh/python-build-standalone/releases/download/20251120/cpython-3.13.9+20251120-x86_64-pc-windows-msvc-pgo-full.tar.zst";
     var targetPath = Path.GetFullPath("python.tar.gz");
     await DownloadFileAsync(downloadUrl, targetPath, (progress) =>
     {
@@ -108,70 +108,11 @@ async Task InstallPythonDependencies()
 
     await DownloadFileAsync(tomlUrl, targetPath, (progress) => { });
 
-    var cmd = $@"{pythonPath} -m pip install -U pip wheel setuptools maturin --no-warn-script-location && {pythonPath} -m pip install torch==2.7.0 torchvision --index-url https://download.pytorch.org/whl/cu128 --no-warn-script-location && {pythonPath} -m pip install ""{Path.GetFullPath(@".")}"" --no-warn-script-location";
+    var cmd = $@"{pythonPath} -m pip install -U pip wheel setuptools maturin --no-warn-script-location && {pythonPath} -m pip install torch==2.9.1 torchvision --index-url https://download.pytorch.org/whl/cu128 --no-warn-script-location && {pythonPath} -m pip install ""{Path.GetFullPath(@".")}"" --no-warn-script-location";
 
     await RunInstallCommand(cmd);
 
     File.Delete(targetPath);
-}
-
-async Task InstallPythonVapourSynthPlugins()
-{
-    string[] dependencies = { "ffms2" };
-
-    var cmd = $@".\python.exe vsrepo.py -p update && .\python.exe vsrepo.py -p install {string.Join(" ", dependencies)}";
-
-    await RunInstallCommand(cmd);
-}
-
-
-void ExtractZip(string archivePath, string outFolder, ProgressChanged progressChanged)
-{
-
-    using (var fsInput = File.OpenRead(archivePath))
-    using (var zf = new ZipFile(fsInput))
-    {
-
-        for (var i = 0; i < zf.Count; i++)
-        {
-            ZipEntry zipEntry = zf[i];
-
-            if (!zipEntry.IsFile)
-            {
-                // Ignore directories
-                continue;
-            }
-            String entryFileName = zipEntry.Name;
-            // to remove the folder from the entry:
-            //entryFileName = Path.GetFileName(entryFileName);
-            // Optionally match entrynames against a selection list here
-            // to skip as desired.
-            // The unpacked length is available in the zipEntry.Size property.
-
-            // Manipulate the output filename here as desired.
-            var fullZipToPath = Path.Combine(outFolder, entryFileName);
-            var directoryName = Path.GetDirectoryName(fullZipToPath);
-            if (directoryName?.Length > 0)
-            {
-                Directory.CreateDirectory(directoryName);
-            }
-
-            // 4K is optimum
-            var buffer = new byte[4096];
-
-            // Unzip file in buffered chunks. This is just as fast as unpacking
-            // to a buffer the full size of the file, but does not waste memory.
-            // The "using" will close the stream even if an exception occurs.
-            using (var zipStream = zf.GetInputStream(zipEntry))
-            using (Stream fsOutput = File.Create(fullZipToPath))
-            {
-                StreamUtils.Copy(zipStream, fsOutput, buffer);
-            }
-
-            var percentage = Math.Round((double)i / zf.Count * 100, 0);
-            progressChanged?.Invoke(percentage);
-        }
-    }
 }
 
 async Task<string[]> RunInstallCommand(string cmd)
